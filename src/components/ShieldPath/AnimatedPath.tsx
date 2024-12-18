@@ -7,7 +7,7 @@ import ShieldIcon from './ShieldIcon';
 gsap.registerPlugin(ScrollTrigger);
 
 const AnimatedPath: React.FC = () => {
-  const [shieldPosition, setShieldPosition] = useState({ x: 0, y: 0 });
+  const [shieldPosition, setShieldPosition] = useState({ x: 100, y: 200 }); // Start at first segment
   const [shieldRotation, setShieldRotation] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -18,9 +18,10 @@ const AnimatedPath: React.FC = () => {
     let totalLength = 0;
     const segmentPositions: { start: number; end: number; element: Element }[] = [];
 
+    // Calculate total path length and segment positions
     segments.forEach((segment) => {
       const rect = segment.getBoundingClientRect();
-      const length = rect.width;
+      const length = segment.id.includes('vertical') ? rect.height : rect.width;
       segmentPositions.push({
         start: totalLength,
         end: totalLength + length,
@@ -41,46 +42,46 @@ const AnimatedPath: React.FC = () => {
           (currentPosition - currentSegment.start) /
           (currentSegment.end - currentSegment.start);
 
-        setShieldPosition({
-          x: rect.left + rect.width * segmentProgress,
-          y: rect.top + rect.height / 2,
-        });
+        let x, y;
+        const isVertical = currentSegment.element.id.includes('vertical');
+        const isDiagonal = currentSegment.element.id.includes('diagonal');
 
-        // Calculate rotation based on segment direction
-        const angle = currentSegment.element.id.includes('diagonal')
-          ? 45
-          : currentSegment.element.id.includes('vertical')
-          ? 90
-          : 0;
+        if (isVertical) {
+          x = rect.left;
+          y = rect.top + rect.height * segmentProgress;
+        } else if (isDiagonal) {
+          const angle = 45 * (Math.PI / 180); // Convert 45 degrees to radians
+          const distance = rect.width * segmentProgress;
+          x = rect.left + Math.cos(angle) * distance;
+          y = rect.top + Math.sin(angle) * distance;
+        } else {
+          x = rect.left + rect.width * segmentProgress;
+          y = rect.top;
+        }
+
+        setShieldPosition({ x, y });
+
+        // Update rotation based on segment type
+        const angle = isVertical ? 90 : isDiagonal ? 45 : 0;
         setShieldRotation(angle);
       }
     };
 
-    gsap.to({}, {
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: 'top center',
-        end: 'bottom center',
-        scrub: 1,
-        onUpdate: (self) => {
-          updateShieldPosition(self.progress);
-        },
+    // Create scroll trigger animation
+    ScrollTrigger.create({
+      trigger: containerRef.current,
+      start: 'top center',
+      end: 'bottom center',
+      scrub: 1,
+      onUpdate: (self) => {
+        updateShieldPosition(self.progress);
       },
     });
 
-    // Initial animation
-    gsap.fromTo(
-      {},
-      { progress: 0 },
-      {
-        progress: 1,
-        duration: 2,
-        ease: 'power1.inOut',
-        onUpdate: function () {
-          updateShieldPosition(this.progress());
-        },
-      }
-    );
+    // Clean up
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+    };
   }, []);
 
   return (
