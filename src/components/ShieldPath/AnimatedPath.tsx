@@ -68,8 +68,8 @@ const AnimatedPath: React.FC = () => {
       trigger: containerRef.current,
       start: 'top center',
       end: 'bottom center',
-      scrub: 2, // Increased for smoother animation
-      smoothTouch: true, // Smoother touch device scrolling
+      scrub: 2,
+      ease: "power1.inOut",
       onUpdate: (self) => {
         updateShieldPosition(self.progress);
       },
@@ -81,7 +81,7 @@ const AnimatedPath: React.FC = () => {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative min-h-[200vh] py-20"> {/* Increased height for more scroll space */}
+    <div ref={containerRef} className="relative min-h-[200vh] py-20">
       <PathSegment
         id="segment1"
         direction="horizontal"
