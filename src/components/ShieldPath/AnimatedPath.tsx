@@ -68,8 +68,10 @@ const AnimatedPath: React.FC = () => {
       trigger: containerRef.current,
       start: 'top center',
       end: 'bottom center',
-      scrub: 2,
-      ease: "power1.inOut",
+      scrub: { 
+        duration: 2,
+        smoothing: 1
+      },
       onUpdate: (self) => {
         updateShieldPosition(self.progress);
       },
